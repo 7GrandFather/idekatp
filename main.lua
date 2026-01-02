@@ -12,7 +12,7 @@ local function validateSecurity()
     
     if not isfile('newvape/security/validated') then
         game.StarterGui:SetCore("SendNotification", {
-            Title = "Security Error",
+            Title = "error",
             Text = "no validation file found",
             Duration = 5
         })
@@ -26,7 +26,7 @@ local function validateSecurity()
     
     if not success or not validationData then
         game.StarterGui:SetCore("SendNotification", {
-            Title = "Security Error",
+            Title = "error",
             Text = "corrupted validation file",
             Duration = 5
         })
@@ -44,7 +44,7 @@ local function validateSecurity()
     
     if not isfile('newvape/security/'..validationData.username) then
         game.StarterGui:SetCore("SendNotification", {
-            Title = "Security Error",
+            Title = "error",
             Text = "user validation missing",
             Duration = 5
         })
@@ -56,7 +56,7 @@ local function validateSecurity()
     
     if validationData.repo_owner ~= EXPECTED_REPO_OWNER or validationData.repo_name ~= EXPECTED_REPO_NAME then
         game.StarterGui:SetCore("SendNotification", {
-            Title = "Security Error",
+            Title = "error",
             Text = "unauthorized repository detected",
             Duration = 5
         })
@@ -81,7 +81,7 @@ local function validateSecurity()
     local accounts = fetchAccounts()
     if not accounts then
         game.StarterGui:SetCore("SendNotification", {
-            Title = "Connection Error",
+            Title = "error",
             Text = "failed to verify account status",
             Duration = 5
         })
@@ -100,8 +100,8 @@ local function validateSecurity()
     
     if not accountValid then
         game.StarterGui:SetCore("SendNotification", {
-            Title = "Access Revoked",
-            Text = "your account is no longer authorized",
+            Title = "access taken away",
+            Text = "your account is no longer allowed to use the script",
             Duration = 5
         })
         return false, nil
@@ -109,7 +109,7 @@ local function validateSecurity()
     
     if not accountActive then
         game.StarterGui:SetCore("SendNotification", {
-            Title = "Account Inactive",
+            Title = "account inactive",
             Text = "your account is currently inactive",
             Duration = 5
         })
@@ -202,8 +202,8 @@ local function startActiveCheck()
             
             if not isActive then
                 game.StarterGui:SetCore("SendNotification", {
-                    Title = "Access Revoked",
-                    Text = "Your account has been deactivated.",
+                    Title = "access taken away",
+                    Text = "your account has been deactivated",
                     Duration = 5
                 })
                 
