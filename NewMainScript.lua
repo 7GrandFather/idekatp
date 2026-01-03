@@ -4,6 +4,39 @@ local EXPECTED_REPO_OWNER = "poopparty"
 local EXPECTED_REPO_NAME = "poopparty"
 local ACCOUNT_SYSTEM_URL = "https://raw.githubusercontent.com/poopparty/whitelistcheck/main/AccountSystem.lua"
 
+local function getHWID()
+    local hwid = nil
+    
+    if gethwid then
+        hwid = gethwid()
+    elseif getexecutorname then
+        local executor_name = getexecutorname()
+        local unique_str = executor_name .. tostring(game:GetService("UserInputService"):GetGamepadState(Enum.UserInputType.Gamepad1))
+        hwid = game:GetService("HttpService"):GenerateGUID(false)
+        
+        if syn and syn.crypt and syn.crypt.hash then
+            hwid = syn.crypt.hash(unique_str)
+        elseif crypt and crypt.hash then
+            hwid = crypt.hash(unique_str)
+        end
+    end
+    
+    if not hwid and game:GetService("RbxAnalyticsService") then
+        local success, result = pcall(function()
+            return game:GetService("RbxAnalyticsService"):GetClientId()
+        end)
+        if success and result then
+            hwid = result
+        end
+    end
+    
+    if not hwid then
+        hwid = tostring(math.random(100000, 999999)) .. tostring(os.time())
+    end
+    
+    return hwid
+end
+
 local function clearSecurityFolderIfDifferent(username)
     if not isfolder('newvape/security') then
         makefolder('newvape/security')
@@ -25,7 +58,7 @@ local function clearSecurityFolderIfDifferent(username)
     end
 end
 
-local function createValidationFile(username, repoInfo)
+local function createValidationFile(username, repoInfo, hwid)
     if not isfolder('newvape/security') then
         makefolder('newvape/security')
     end
@@ -36,6 +69,7 @@ local function createValidationFile(username, repoInfo)
         repo_owner = repoInfo.owner,
         repo_name = repoInfo.name,
         validated = true,
+        hwid = hwid,
         checksum = game:GetService("HttpService"):GenerateGUID(false)
     }
     
@@ -89,6 +123,8 @@ local function SecurityCheck(loginData)
         return false
     end
     
+    local currentHWID = getHWID()
+    
     clearSecurityFolderIfDifferent(inputUsername)
     
     local accounts = fetchAccounts()
@@ -103,10 +139,12 @@ local function SecurityCheck(loginData)
     
     local accountFound = false
     local accountActive = false
+    local accountHWID = nil
     for _, account in pairs(accounts) do
         if account.Username == inputUsername and account.Password == inputPassword then
             accountFound = true
             accountActive = account.IsActive == true
+            accountHWID = account.HWID
             break
         end
     end
@@ -129,8 +167,26 @@ local function SecurityCheck(loginData)
         return false
     end
     
+    if not accountHWID or accountHWID == "" or accountHWID == "your-hwid-here" or accountHWID:find("hwid-here") then
+        game.StarterGui:SetCore("SendNotification", {
+            Title = "no hwid set",
+            Text = "your account has no hwid set. contact aero to set it up",
+            Duration = 10
+        })
+        return false
+    end
+    
+    if currentHWID ~= accountHWID then
+        game.StarterGui:SetCore("SendNotification", {
+            Title = "hwid mismatch",
+            Text = "this device is not authorized for this account",
+            Duration = 5
+        })
+        return false
+    end
+    
     local repoInfo = getRepoInfo()
-    createValidationFile(inputUsername, repoInfo)
+    createValidationFile(inputUsername, repoInfo, currentHWID)
     
     return true
 end
