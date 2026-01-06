@@ -21445,6 +21445,8 @@ run(function()
     local MouseBindToggle
     local MouseBindList
     local KeybindMode
+    local ImpulseSlider
+    local JumpHeightSlider
     local CurrentKeybind = Enum.KeyCode.Q
     local CurrentMouseBind = Enum.UserInputType.MouseButton2
     local UseMouseBind = false
@@ -21534,8 +21536,8 @@ run(function()
                 pcall(function()
                     local hrp = character.HumanoidRootPart
                     local mass = hrp.AssemblyMass or 5
-                    hrp:ApplyImpulse(lookVector.Unit * Vector3.new(1, 0, 1) * mass * 100)
-                    character.Humanoid.JumpHeight = 10
+                    hrp:ApplyImpulse(lookVector.Unit * Vector3.new(1, 0, 1) * mass * ImpulseSlider.Value)
+                    character.Humanoid.JumpHeight = JumpHeightSlider.Value
                     character.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
                 end)
                 
@@ -21641,7 +21643,7 @@ run(function()
                             return
                         end
                         
-                        if not (input.UserInputType == Enum.UserInputType.MouseButton2 or input.KeyCode == Enum.KeyCode.Q) then
+                        if not (input.UserInputType == input.KeyCode == Enum.KeyCode.Q) then
                             return
                         end
                         
@@ -21803,6 +21805,22 @@ run(function()
         Visible = false,
         Tooltip = 'Delay between dashes in seconds'
     })
+
+    ImpulseSlider = YuziDasher:CreateSlider({
+        Name = 'Impulse Multiplier',
+        Min = 10,
+        Max = 500,
+        Default = 100,
+        Tooltip = 'controls dash speed'
+    })
+
+    JumpHeightSlider = YuziDasher:CreateSlider({
+        Name = 'Jump Height',
+        Min = 0,
+        Max = 50,
+        Default = 10,
+        Tooltip = 'Controls jump height during dash'
+    })
     
     task.spawn(function()
         repeat
@@ -21898,3 +21916,4 @@ run(function()
 		Tooltip = 'Shows what fish you are catching'
 	})
 end)
+
