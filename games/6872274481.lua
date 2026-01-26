@@ -1,5 +1,6 @@
 --This watermark is used to delete the file if its cached, remove it to make the file persist after vape updates.
 --This watermark is used to delete the file if its cached, remove it to make the file persist after vape updates.
+--This watermark is used to delete the file if its cached, remove it to make the file persist after vape updates.
 local run = function(func)
 	func()
 end
@@ -3965,35 +3966,34 @@ run(function()
         end
     end
 
-	local function optimizeHitData(selfpos, targetpos, delta)
-		local direction = (targetpos - selfpos).Unit
-		local distance = (selfpos - targetpos).Magnitude
-		
-		local optimizedSelfPos = selfpos
-		local optimizedTargetPos = targetpos
-		
-		if distance > 16 then
-			optimizedSelfPos = selfpos + (direction * 3.2)
-			optimizedTargetPos = targetpos - (direction * 1.8)
-		elseif distance > 14 then
-			optimizedSelfPos = selfpos + (direction * 2.4)
-			optimizedTargetPos = targetpos - (direction * 1.2)
-		elseif distance > 12 then
-			optimizedSelfPos = selfpos + (direction * 1.6)
-			optimizedTargetPos = targetpos - (direction * 0.4)
-		else
-			optimizedSelfPos = selfpos + (direction * 0.8)
-		end
-		
-		optimizedSelfPos = optimizedSelfPos + Vector3.new(0, 1.1, 0)
-		optimizedTargetPos = optimizedTargetPos + Vector3.new(0, 0.9, 0)
-		
-		return optimizedSelfPos, optimizedTargetPos, direction
-	end
+    local function optimizeHitData(selfpos, targetpos, delta)
+        local direction = (targetpos - selfpos).Unit
+        local distance = (selfpos - targetpos).Magnitude
+        
+        local optimizedSelfPos = selfpos
+        local optimizedTargetPos = targetpos
+        
+        if distance > 18 then
+            optimizedSelfPos = selfpos + (direction * 2.2)
+            optimizedTargetPos = targetpos - (direction * 0.5)
+        elseif distance > 14.4 then
+            optimizedSelfPos = selfpos + (direction * 1.8)
+            optimizedTargetPos = targetpos - (direction * 0.3)
+        elseif distance > 10 then
+            optimizedSelfPos = selfpos + (direction * 1.2)
+        else
+            optimizedSelfPos = selfpos + (direction * 0.6)
+        end
+        
+        optimizedSelfPos = optimizedSelfPos + Vector3.new(0, 0.8, 0)
+        optimizedTargetPos = optimizedTargetPos + Vector3.new(0, 1.2, 0)
+        
+        return optimizedSelfPos, optimizedTargetPos, direction
+    end
 
     local function getOptimizedAttackTiming()
         local currentTime = tick()
-        local baseDelay = 0.09
+        local baseDelay = 0.11 
         
         if currentTime - lastAttackTime < baseDelay then
             return false
@@ -4037,31 +4037,26 @@ run(function()
         store.attackReach = (actualDistance * 100) // 1 / 100
         store.attackReachUpdate = tick() + 1
 
-		if actualDistance > 13 and actualDistance <= 20 then
-			local direction = (targetpos - selfpos).Unit
-			
-			local selfExtend, targetPull
-			if actualDistance > 16 then
-				selfExtend = 3.5
-				targetPull = 2.0
-			elseif actualDistance > 14 then
-				selfExtend = 2.8
-				targetPull = 1.5
-			else
-				selfExtend = 2.0
-				targetPull = 0.8
-			end
-			
-			attackTable.validate.selfPosition.value = selfpos + (direction * selfExtend) + Vector3.new(0, 0.6, 0)
-			attackTable.validate.targetPosition.value = targetpos - (direction * targetPull) + Vector3.new(0, 0.4, 0)
-			
-			attackTable.validate.raycast = attackTable.validate.raycast or {}
-			attackTable.validate.raycast.cameraPosition = attackTable.validate.raycast.cameraPosition or {}
-			attackTable.validate.raycast.cursorDirection = attackTable.validate.raycast.cursorDirection or {}
-			
-			attackTable.validate.raycast.cameraPosition.value = selfpos + (direction * selfExtend) + Vector3.new(0, 1.8, 0)
-			attackTable.validate.raycast.cursorDirection.value = direction
-		end
+        if actualDistance > 14.4 and actualDistance <= 30 then
+            local direction = (targetpos - selfpos).Unit
+            
+            local moveDistance = math.min(actualDistance - 14.3, 8) 
+            attackTable.validate.selfPosition.value = selfpos + (direction * moveDistance)
+            
+            local pullDistance = math.min(actualDistance - 14.3, 4)
+            attackTable.validate.targetPosition.value = targetpos - (direction * pullDistance)
+            
+            attackTable.validate.raycast = attackTable.validate.raycast or {}
+            attackTable.validate.raycast.cameraPosition = attackTable.validate.raycast.cameraPosition or {}
+            attackTable.validate.raycast.cursorDirection = attackTable.validate.raycast.cursorDirection or {}
+            
+            local extendedOrigin = selfpos + (direction * math.min(actualDistance - 12, 15))
+            attackTable.validate.raycast.cameraPosition.value = extendedOrigin
+            attackTable.validate.raycast.cursorDirection.value = direction
+            
+            attackTable.validate.targetPosition = attackTable.validate.targetPosition or {value = targetpos}
+            attackTable.validate.selfPosition = attackTable.validate.selfPosition or {value = selfpos}
+        end
 
         if suc and plr then
             if not select(2, whitelist:get(plr)) then return end
@@ -4327,29 +4322,25 @@ run(function()
                             end
                         end
 
-						if TargetPriority.Value == 'Players First' then
-							table.sort(allSwingTargets, function(a, b)
-								if a.isPlayer ~= b.isPlayer then
-									return a.isPlayer
-								end
-								return (a.entity.RootPart.Position - selfpos).Magnitude < (b.entity.RootPart.Position - selfpos).Magnitude
-							end)
-						elseif TargetPriority.Value == 'NPCs First' then
-							table.sort(allSwingTargets, function(a, b)
-								if a.isPlayer ~= b.isPlayer then
-									return not a.isPlayer
-								end
-								return (a.entity.RootPart.Position - selfpos).Magnitude < (b.entity.RootPart.Position - selfpos).Magnitude
-							end)
-						elseif TargetPriority.Value == 'Both' then
-							table.sort(allSwingTargets, function(a, b)
-								return (a.entity.RootPart.Position - selfpos).Magnitude < (b.entity.RootPart.Position - selfpos).Magnitude
-							end)
-						else 
-							table.sort(allSwingTargets, function(a, b)
-								return (a.entity.RootPart.Position - selfpos).Magnitude < (b.entity.RootPart.Position - selfpos).Magnitude
-							end)
-						end
+                        if TargetPriority.Value == 'Players First' then
+                            table.sort(allSwingTargets, function(a, b)
+                                if a.isPlayer ~= b.isPlayer then
+                                    return a.isPlayer
+                                end
+                                return (a.entity.RootPart.Position - selfpos).Magnitude < (b.entity.RootPart.Position - selfpos).Magnitude
+                            end)
+                        elseif TargetPriority.Value == 'NPCs First' then
+                            table.sort(allSwingTargets, function(a, b)
+                                if a.isPlayer ~= b.isPlayer then
+                                    return not a.isPlayer
+                                end
+                                return (a.entity.RootPart.Position - selfpos).Magnitude < (b.entity.RootPart.Position - selfpos).Magnitude
+                            end)
+                        else
+                            table.sort(allSwingTargets, function(a, b)
+                                return (a.entity.RootPart.Position - selfpos).Magnitude < (b.entity.RootPart.Position - selfpos).Magnitude
+                            end)
+                        end
 
                         local swingPlrs = {}
                         for i = 1, math.min(#allSwingTargets, MaxTargets.Value) do
@@ -4386,29 +4377,25 @@ run(function()
                             end
                         end
 
-						if TargetPriority.Value == 'Players First' then
-							table.sort(allAttackTargets, function(a, b)
-								if a.isPlayer ~= b.isPlayer then
-									return a.isPlayer
-								end
-								return (a.entity.RootPart.Position - selfpos).Magnitude < (b.entity.RootPart.Position - selfpos).Magnitude
-							end)
-						elseif TargetPriority.Value == 'NPCs First' then
-							table.sort(allAttackTargets, function(a, b)
-								if a.isPlayer ~= b.isPlayer then
-									return not a.isPlayer
-								end
-								return (a.entity.RootPart.Position - selfpos).Magnitude < (b.entity.RootPart.Position - selfpos).Magnitude
-							end)
-						elseif TargetPriority.Value == 'Both' then
-							table.sort(allAttackTargets, function(a, b)
-								return (a.entity.RootPart.Position - selfpos).Magnitude < (b.entity.RootPart.Position - selfpos).Magnitude
-							end)
-						else 
-							table.sort(allAttackTargets, function(a, b)
-								return (a.entity.RootPart.Position - selfpos).Magnitude < (b.entity.RootPart.Position - selfpos).Magnitude
-							end)
-						end
+                        if TargetPriority.Value == 'Players First' then
+                            table.sort(allAttackTargets, function(a, b)
+                                if a.isPlayer ~= b.isPlayer then
+                                    return a.isPlayer
+                                end
+                                return (a.entity.RootPart.Position - selfpos).Magnitude < (b.entity.RootPart.Position - selfpos).Magnitude
+                            end)
+                        elseif TargetPriority.Value == 'NPCs First' then
+                            table.sort(allAttackTargets, function(a, b)
+                                if a.isPlayer ~= b.isPlayer then
+                                    return not a.isPlayer
+                                end
+                                return (a.entity.RootPart.Position - selfpos).Magnitude < (b.entity.RootPart.Position - selfpos).Magnitude
+                            end)
+                        else
+                            table.sort(allAttackTargets, function(a, b)
+                                return (a.entity.RootPart.Position - selfpos).Magnitude < (b.entity.RootPart.Position - selfpos).Magnitude
+                            end)
+                        end
 
                         local attackPlrs = {}
                         for i = 1, math.min(#allAttackTargets, MaxTargets.Value) do
@@ -4492,22 +4479,22 @@ run(function()
                                     end
 
 									local canHit = delta.Magnitude <= AttackRange.Value
-									local extendedRangeCheck = delta.Magnitude <= (AttackRange.Value + 2)
+									local extendedRangeCheck = delta.Magnitude <= (AttackRange.Value + 3) 
 
 									if not canHit and not extendedRangeCheck then continue end
 
-									if delta.Magnitude > 13 and delta.Magnitude <= 15 then
-										task.wait(0.01) 
-									end
-
-									if SyncHits.Enabled then
-										local swingSpeed = SwingTime.Enabled and SwingTimeSlider.Value or (meta.sword.respectAttackSpeedForEffects and meta.sword.attackSpeed or 0.42)
-										local requiredDelay = math.max(swingSpeed * 0.65, 0.08) 
-										
-										if (tick() - swingCooldown) < requiredDelay then 
-											continue 
-										end
-									end
+                                    if SyncHits.Enabled then
+                                        local swingSpeed = SwingTime.Enabled and SwingTimeSlider.Value or (meta.sword.respectAttackSpeedForEffects and meta.sword.attackSpeed or 0.42)
+                                        if (tick() - swingCooldown) < (swingSpeed * 0.7) then 
+                                            continue 
+                                        end
+                                     local timeSinceLastSwing = tick() - swingCooldown
+                                        local requiredDelay = math.max(swingSpeed * 0.8, 0.1) 
+                                        
+                                        if timeSinceLastSwing < requiredDelay then 
+                                            continue 
+                                        end
+                                    end
 
                                     local actualRoot = v.Character.PrimaryPart
                                     if actualRoot then
@@ -4515,11 +4502,6 @@ run(function()
 
                                         local pos = selfpos
                                         local targetPos = actualRoot.Position
-
-										if delta.Magnitude > 13 and delta.Magnitude < 15 then
-											pos = pos + (dir * 0.4)
-											targetPos = targetPos + Vector3.new(0, 0.2, 0)
-										end
 
                                         if not SyncHits.Enabled or (tick() - swingCooldown) >= 0.1 then
                                             swingCooldown = tick()
@@ -4674,12 +4656,12 @@ run(function()
         NPCs = true
     })
     
-	TargetPriority = Killaura:CreateDropdown({
-		Name = 'Target Priority',
-		List = {'Players First', 'NPCs First', 'Distance', 'Both'},
-		Default = 'Players First',
-		Tooltip = 'Choose which targets to prioritize'
-	})
+    TargetPriority = Killaura:CreateDropdown({
+        Name = 'Target Priority',
+        List = {'Players First', 'NPCs First', 'Distance'},
+        Default = 'Players First',
+        Tooltip = 'Choose which targets to prioritize'
+    })
     
     local methods = {'Damage', 'Distance'}
     for i in sortmethods do
@@ -4727,7 +4709,7 @@ run(function()
     UpdateRate = Killaura:CreateSlider({
         Name = 'Update rate',
         Min = 1,
-        Max = 240,
+        Max = 120,
         Default = 60,
         Suffix = 'hz'
     })
@@ -4767,15 +4749,6 @@ run(function()
             end
         end
     })
-    ContinueSwingTime = Killaura:CreateSlider({
-        Name = 'Swing Duration',
-        Min = 0,  
-        Max = 5,  
-        Default = 1,
-        Decimal = 10,
-        Suffix = 's',
-        Visible = false
-    })
     CustomHitReg = Killaura:CreateToggle({
         Name = 'Custom Hit Reg',
         Tooltip = 'Limit how many hits per second',
@@ -4795,6 +4768,15 @@ run(function()
         Max = 36,
         Default = 30,
         Tooltip = 'Maximum hits per second',
+        Visible = false
+    })
+    ContinueSwingTime = Killaura:CreateSlider({
+        Name = 'Swing Duration',
+        Min = 0,  
+        Max = 5,  
+        Default = 1,
+        Decimal = 10,
+        Suffix = 's',
         Visible = false
     })
     SyncHits = Killaura:CreateToggle({
