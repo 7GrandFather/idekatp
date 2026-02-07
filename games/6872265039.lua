@@ -1,5 +1,4 @@
 --This watermark is used to delete the file if its cached, remove it to make the file persist after vape updates.
---This watermark is used to delete the file if its cached, remove it to make the file persist after vape updates.
 local run = function(func) func() end
 local cloneref = cloneref or function(obj) return obj end
 
@@ -22,23 +21,87 @@ run(function()
 		local ind = table.find(tab, 'Client')
 		return ind and tab[ind + 1] or ''
 	end
-
 	local KnitInit, Knit
 	repeat
-		KnitInit, Knit = pcall(function() return debug.getupvalue(require(lplr.PlayerScripts.TS.knit).setup, 9) end)
+		KnitInit, Knit = pcall(function()
+			return debug.getupvalue(require(lplr.PlayerScripts.TS.knit).setup, 9)
+		end)
 		if KnitInit then break end
-		task.wait()
+		task.wait(0.1)
 	until KnitInit
+
 	if not debug.getupvalue(Knit.Start, 1) then
-		repeat task.wait() until debug.getupvalue(Knit.Start, 1)
+		repeat task.wait(0.1) until debug.getupvalue(Knit.Start, 1)
 	end
+
 	local Flamework = require(replicatedStorage['rbxts_include']['node_modules']['@flamework'].core.out).Flamework
+	local InventoryUtil = require(replicatedStorage.TS.inventory['inventory-util']).InventoryUtil
 	local Client = require(replicatedStorage.TS.remotes).default.Client
+	local OldGet, OldBreak = Client.Get
+	local function safeGetProto(func, index)
+		if not func then return nil end
+		local success, proto = pcall(safeGetProto, func, index)
+		if success then
+			return proto
+		else
+			warn("function:", func, "index:", index) 
+			return nil
+		end
+	end
 
 	bedwars = setmetatable({
+	 	MatchHistroyApp = require(lplr.PlayerScripts.TS.controllers.global["match-history"].ui["match-history-moderation-app"]).MatchHistoryModerationApp,
+	 	MatchHistroyController = Knit.Controllers.MatchHistoryController,
+		AbilityController = Flamework.resolveDependency('@easy-games/game-core:client/controllers/ability/ability-controller@AbilityController'),
+		AnimationType = require(replicatedStorage.TS.animation['animation-type']).AnimationType,
+		AnimationUtil = require(replicatedStorage['rbxts_include']['node_modules']['@easy-games']['game-core'].out['shared'].util['animation-util']).AnimationUtil,
+		AppController = require(replicatedStorage['rbxts_include']['node_modules']['@easy-games']['game-core'].out.client.controllers['app-controller']).AppController,
+		BedBreakEffectMeta = require(replicatedStorage.TS.locker['bed-break-effect']['bed-break-effect-meta']).BedBreakEffectMeta,
+		BedwarsKitMeta = require(replicatedStorage.TS.games.bedwars.kit['bedwars-kit-meta']).BedwarsKitMeta,
+		ClickHold = require(replicatedStorage['rbxts_include']['node_modules']['@easy-games']['game-core'].out.client.ui.lib.util['click-hold']).ClickHold,
 		Client = Client,
-		CrateItemMeta = debug.getupvalue(Flamework.resolveDependency('client/controllers/global/reward-crate/crate-controller@CrateController').onStart, 3),
-		Store = require(lplr.PlayerScripts.TS.ui.store).ClientStore
+		ClientConstructor = require(replicatedStorage['rbxts_include']['node_modules']['@rbxts'].net.out.client),
+		MatchHistoryController = require(lplr.PlayerScripts.TS.controllers.global['match-history']['match-history-controller']),
+		PlayerProfileUIController = require(lplr.PlayerScripts.TS.controllers.global['player-profile']['player-profile-ui-controller']),
+		TitleTypes = require(game.ReplicatedStorage.TS.locker.title['title-type']).TitleType,
+		TitleTypesMeta =  require(game.ReplicatedStorage.TS.locker.title['title-meta']).TitleMeta,
+		EmoteType = require(replicatedStorage.TS.locker.emote['emote-type']).EmoteType,
+		GameAnimationUtil = require(replicatedStorage.TS.animation['animation-util']).GameAnimationUtil,
+		NotificationController = Flamework.resolveDependency('@easy-games/game-core:client/controllers/notification-controller@NotificationController'),
+		getIcon = function(item, showinv)
+			local itemmeta = bedwars.ItemMeta[item.itemType]
+			return itemmeta and showinv and itemmeta.image or ''
+		end,
+		getInventory = function(plr)
+			local suc, res = pcall(function()
+				return InventoryUtil.getInventory(plr)
+			end)
+			return suc and res or {
+				items = {},
+				armor = {}
+			}
+		end,
+		HudAliveCount = require(lplr.PlayerScripts.TS.controllers.global['top-bar'].ui.game['hud-alive-player-counts']).HudAlivePlayerCounts,
+		ItemMeta = debug.getupvalue(require(replicatedStorage.TS.item['item-meta']).getItemMeta, 1),
+		Knit = Knit,
+		KnockbackUtil = require(replicatedStorage.TS.damage['knockback-util']).KnockbackUtil,
+		MageKitUtil = require(replicatedStorage.TS.games.bedwars.kit.kits.mage['mage-kit-util']).MageKitUtil,
+		NametagController = Knit.Controllers.NametagController,
+		PartyController = Flamework.resolveDependency('@easy-games/lobby:client/controllers/party-controller@PartyController'),
+		ProjectileMeta = require(replicatedStorage.TS.projectile['projectile-meta']).ProjectileMeta,
+		QueryUtil = require(replicatedStorage['rbxts_include']['node_modules']['@easy-games']['game-core'].out).GameQueryUtil,
+		QueueCard = require(lplr.PlayerScripts.TS.controllers.global.queue.ui['queue-card']).QueueCard,
+		QueueMeta = require(replicatedStorage.TS.game['queue-meta']).QueueMeta,
+		Roact = require(replicatedStorage['rbxts_include']['node_modules']['@rbxts']['roact'].src),
+		RuntimeLib = require(replicatedStorage['rbxts_include'].RuntimeLib),
+		SoundList = require(replicatedStorage.TS.sound['game-sound']).GameSound,
+		Store = require(lplr.PlayerScripts.TS.ui.store).ClientStore,
+		TeamUpgradeMeta = debug.getupvalue(require(replicatedStorage.TS.games.bedwars['team-upgrade']['team-upgrade-meta']).getTeamUpgradeMetaForQueue, 6),
+		UILayers = require(replicatedStorage['rbxts_include']['node_modules']['@easy-games']['game-core'].out).UILayers,
+		VisualizerUtils = require(lplr.PlayerScripts.TS.lib.visualizer['visualizer-utils']).VisualizerUtils,
+		WeldTable = require(replicatedStorage.TS.util['weld-util']).WeldUtil,
+		WinEffectMeta = require(replicatedStorage.TS.locker['win-effect']['win-effect-meta']).WinEffectMeta,
+		ZapNetworking = require(lplr.PlayerScripts.TS.lib.network),
 	}, {
 		__index = function(self, ind)
 			rawset(self, ind, Knit.Controllers[ind])
@@ -57,7 +120,7 @@ run(function()
 end)
 
 for _, v in vape.Modules do
-	if v.Category == 'Combat' or v.Category == 'Minigames' then
+	if v.Category == 'Combat' or v.Category == 'Render' then
 		vape:Remove(i)
 	end
 end
@@ -256,4 +319,418 @@ run(function()
 		end,
 		Tooltip = "matchhisory"
 	})																								
+end)
+
+run(function()
+	local OGNameTags
+	local Players = game:GetService("Players")
+	local ReplicatedStorage = game:GetService("ReplicatedStorage")
+	local CollectionService = game:GetService("CollectionService")
+	local LP = Players.LocalPlayer
+	local FLAME_IMAGE = "rbxassetid://116217418854521"
+	local BedwarsImageId = require(ReplicatedStorage.TS.image["image-id"]).BedwarsImageId
+	local TITLE_STROKE_TRANSP = nil
+	local WIN_TEXT_SIZE = 19
+	local WIN_TEXT_PULL_LEFT = 16
+	local TITLE_TEXT_SIZE = 14 
+	
+	local KnitClient
+	do
+		local ok, knitMod = pcall(function()
+			return require(ReplicatedStorage.rbxts_include.node_modules["@easy-games"].knit.src).KnitClient
+		end)
+		if ok then KnitClient = knitMod end
+	end
+	
+	local function divisionToRankKey(division)
+		if division >= 0 and division <= 3 then return "BRONZE_RANK"
+		elseif division >= 4 and division <= 7 then return "SILVER_RANK"
+		elseif division >= 8 and division <= 11 then return "GOLD_RANK"
+		elseif division >= 12 and division <= 15 then return "PLATINUM_RANK"
+		elseif division >= 16 and division <= 19 then return "DIAMOND_RANK"
+		elseif division >= 20 and division <= 23 then return "EMERALD_RANK"
+		elseif division == 24 then return "NIGHTMARE_RANK"
+		end
+		return "RANDOM_KIT_RENDER"
+	end
+	
+	local function requestNametagData(callback)
+		if not KnitClient or not KnitClient.Controllers or not KnitClient.Controllers.NametagController then return end
+		local ctrl = KnitClient.Controllers.NametagController
+		local ok, promise = pcall(function()
+			return ctrl:requestNametagData(LP)
+		end)
+		if not ok or not promise then return end
+		if typeof(promise) == "table" and promise.andThen then
+			promise:andThen(function(data) callback(data) end)
+		end
+	end
+	
+	local function findLocalOriginalNametag(char)
+		local head = char:FindFirstChild("Head")
+		if not head then return nil end
+		for _, gui in ipairs(CollectionService:GetTagged("EntityNameTag")) do
+			if gui:IsA("BillboardGui") and (gui.Adornee == head or gui:IsDescendantOf(char)) then
+				return gui
+			end
+		end
+		return nil
+	end
+	
+	local function hideMiddleNameAndLevel(originalGui)
+		if not originalGui then return end
+		
+		local container = originalGui:FindFirstChild("DisplayNameContainer", true)
+		if container and container:IsA("GuiObject") then container.Visible = false end
+		
+		local nameLabel = originalGui:FindFirstChild("DisplayName", true)
+		if nameLabel and nameLabel:IsA("TextLabel") then nameLabel.Visible = false end
+		
+		for _, d in ipairs(originalGui:GetDescendants()) do
+			if d:IsA("TextLabel") then
+				local t = tostring(d.Text or "")
+				if t:match("^%(%d+%)") then d.Visible = false end
+			end
+		end
+	end
+	
+	local function hideOldWinStreakOnly(originalGui)
+		if not originalGui then return end
+		
+		for _, d in ipairs(originalGui:GetDescendants()) do
+			if d:IsA("TextLabel") then
+				local name = string.lower(d.Name or "")
+				local txt = tostring(d.Text or "")
+				if name:find("winstreak") or name:find("streak") or txt:find("🔥") then
+					d.Visible = false
+				end
+			elseif d:IsA("ImageLabel") then
+				local name = string.lower(d.Name or "")
+				local img = tostring(d.Image or "")
+				if name:find("winstreak") or name:find("streak") or img == FLAME_IMAGE then
+					d.Visible = false
+				end
+			end
+		end
+	end
+	
+	local RANK_ICON_IMAGES = {}
+	do
+		local keys = {
+			"BRONZE_RANK","SILVER_RANK","GOLD_RANK","PLATINUM_RANK",
+			"DIAMOND_RANK","EMERALD_RANK","NIGHTMARE_RANK",
+		}
+		for _, k in ipairs(keys) do
+			local img = BedwarsImageId[k]
+			if type(img) == "string" and img ~= "" then
+				RANK_ICON_IMAGES[img] = true
+			end
+		end
+	end
+	
+	local function hideOldRankIconOnly(originalGui)
+		if not originalGui then return end
+		
+		for _, d in ipairs(originalGui:GetDescendants()) do
+			if d:IsA("ImageLabel") then
+				local name = string.lower(d.Name or "")
+				local img = tostring(d.Image or "")
+				
+				if RANK_ICON_IMAGES[img] then
+					d.Visible = false
+				elseif name:find("rank") or name:find("division") or name:find("elo") then
+					d.Visible = false
+				end
+			end
+		end
+	end
+	
+	local function fixRoleTextScaling(originalGui)
+		if not originalGui then return end
+		
+		for _, d in ipairs(originalGui:GetDescendants()) do
+			if d:IsA("TextLabel") then
+				local name = string.lower(d.Name or "")
+				
+				if name:find("title") or name:find("playertitle") or name:find("role") then
+					d.TextScaled = false
+					d.TextSize = TITLE_TEXT_SIZE
+					if TITLE_STROKE_TRANSP ~= nil then
+						d.TextStrokeTransparency = TITLE_STROKE_TRANSP
+					end
+				end
+			end
+		end
+	end
+	
+	local function hideOtherLocalBillboards(char)
+		for _, inst in ipairs(char:GetDescendants()) do
+			if inst:IsA("BillboardGui") and not CollectionService:HasTag(inst, "EntityNameTag") then
+				if inst.Name ~= "LocalRankStreakGui" then
+					inst.Enabled = false
+				end
+			end
+		end
+	end
+	
+	local function createHeadLockedGui(head)
+		local existing = head:FindFirstChild("LocalRankStreakGui")
+		if existing and existing:IsA("BillboardGui") then
+			return existing
+		end
+		
+		local bb = Instance.new("BillboardGui")
+		bb.Name = "LocalRankStreakGui"
+		bb.Parent = head
+		bb.Adornee = head
+		bb.AlwaysOnTop = true
+		bb.ResetOnSpawn = false
+		bb.MaxDistance = 1000
+		
+		bb.Size = UDim2.fromScale(7.2, 0.9)
+		bb.StudsOffset = Vector3.new(0.44, 1.45, 0)
+		
+		local main = Instance.new("Frame")
+		main.BackgroundTransparency = 1
+		main.Size = UDim2.fromScale(1, 1)
+		main.Parent = bb
+		
+		local row = Instance.new("Frame")
+		row.Name = "Row"
+		row.BackgroundTransparency = 1
+		row.AnchorPoint = Vector2.new(0.5, 0.5)
+		row.Position = UDim2.fromScale(0.56, 0.5)
+		row.Size = UDim2.fromScale(1, 1)
+		row.Parent = main
+		
+		local layout = Instance.new("UIListLayout")
+		layout.FillDirection = Enum.FillDirection.Horizontal
+		layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+		layout.VerticalAlignment = Enum.VerticalAlignment.Center
+		layout.Padding = UDim.new(0, 0)
+		layout.Parent = row
+		
+		local rank = Instance.new("ImageLabel")
+		rank.Name = "RankIcon"
+		rank.BackgroundTransparency = 1
+		rank.Size = UDim2.fromScale(0.16, 0.95)
+		rank.Parent = row
+		local rAspect = Instance.new("UIAspectRatioConstraint")
+		rAspect.AspectRatio = 1
+		rAspect.Parent = rank
+		
+		local spacer = Instance.new("Frame")
+		spacer.Name = "TwoSpace"
+		spacer.BackgroundTransparency = 1
+		spacer.Size = UDim2.fromScale(0.05, 1)
+		spacer.Parent = row
+		
+		local winGroup = Instance.new("Frame")
+		winGroup.Name = "WinGroup"
+		winGroup.BackgroundTransparency = 1
+		winGroup.Size = UDim2.fromScale(0.36, 0.95)
+		winGroup.Parent = row
+		
+		local flame = Instance.new("ImageLabel")
+		flame.Name = "WinFlame"
+		flame.BackgroundTransparency = 1
+		flame.Image = FLAME_IMAGE
+		flame.AnchorPoint = Vector2.new(0, 0.5)
+		flame.Position = UDim2.fromScale(0, 0.5)
+		flame.Size = UDim2.fromScale(0.46, 1.0)
+		flame.Parent = winGroup
+		
+		local fAspect = Instance.new("UIAspectRatioConstraint")
+		fAspect.AspectRatio = 1
+		fAspect.Parent = flame
+		
+		local num = Instance.new("TextLabel")
+		num.Name = "WinStreak"
+		num.BackgroundTransparency = 1
+		num.Font = Enum.Font.Gotham
+		num.TextColor3 = Color3.fromRGB(255, 255, 255)
+		num.TextStrokeTransparency = 1
+		num.TextXAlignment = Enum.TextXAlignment.Left
+		num.TextYAlignment = Enum.TextYAlignment.Center
+		
+		num.TextScaled = false
+		num.TextSize = WIN_TEXT_SIZE
+		
+		num.AnchorPoint = Vector2.new(0, 0.5)
+		num.Position = UDim2.new(0.46, -WIN_TEXT_PULL_LEFT, 0.5, 0)
+		num.Size = UDim2.new(0.54, 0, 1, 0)
+		num.Parent = winGroup
+		
+		return bb
+	end
+	
+	local function forceWinTextStyle(gui)
+		local num = gui and gui:FindFirstChild("WinStreak", true)
+		if num and num:IsA("TextLabel") then
+			num.TextScaled = false
+			num.TextSize = WIN_TEXT_SIZE
+			num.AnchorPoint = Vector2.new(0, 0.5)
+			num.Position = UDim2.new(0.46, -WIN_TEXT_PULL_LEFT, 0.5, 0)
+			num.Size = UDim2.new(0.54, 0, 1, 0)
+		end
+	end
+	
+	local function updateGui(gui, data)
+		if not gui then return end
+		
+		local streak = 0
+		local division = -1
+		if data then
+			if data.winstreak ~= nil then streak = tonumber(data.winstreak) or 0 end
+			if data.rankDivision ~= nil then division = tonumber(data.rankDivision) or -1 end
+		end
+		
+		local rank = gui:FindFirstChild("RankIcon", true)
+		if rank and rank:IsA("ImageLabel") then
+			local key = divisionToRankKey(division)
+			rank.Image = BedwarsImageId[key] or ""
+		end
+		
+		local flame = gui:FindFirstChild("WinFlame", true)
+		if flame and flame:IsA("ImageLabel") then
+			flame.Image = FLAME_IMAGE
+		end
+		
+		local num = gui:FindFirstChild("WinStreak", true)
+		if num and num:IsA("TextLabel") then
+			num.Text = tostring(streak)
+		end
+		
+		forceWinTextStyle(gui)
+	end
+	
+	local activeLoop = nil
+	
+	local function setup(char)
+		local head = char:WaitForChild("Head", 5)
+		if not head then return end
+		
+		local headGui = createHeadLockedGui(head)
+		
+		activeLoop = task.spawn(function()
+			while char.Parent and OGNameTags.Enabled do
+				task.wait(0.25)
+				
+				hideOtherLocalBillboards(char)
+				
+				local original = findLocalOriginalNametag(char)
+				if original then
+					hideMiddleNameAndLevel(original)
+					hideOldWinStreakOnly(original)
+					hideOldRankIconOnly(original)
+					fixRoleTextScaling(original)
+				end
+				
+				requestNametagData(function(data)
+					updateGui(headGui, data)
+				end)
+				
+				forceWinTextStyle(headGui)
+			end
+		end)
+	end
+	
+	local function cleanup()
+		if activeLoop then
+			task.cancel(activeLoop)
+			activeLoop = nil
+		end
+		
+		if LP.Character then
+			local head = LP.Character:FindFirstChild("Head")
+			if head then
+				local customGui = head:FindFirstChild("LocalRankStreakGui")
+				if customGui then
+					customGui:Destroy()
+				end
+			end
+		end
+		
+		if LP.Character then
+			local original = findLocalOriginalNametag(LP.Character)
+			if original then
+				for _, d in ipairs(original:GetDescendants()) do
+					if d:IsA("GuiObject") then
+						d.Visible = true
+					end
+				end
+			end
+		end
+	end
+	
+	OGNameTags = vape.Categories.Render:CreateModule({
+		Name = 'OGNameTags(lobby)',
+		Function = function(callback)
+			if callback then
+				if LP.Character then
+					setup(LP.Character)
+				end
+				
+				OGNameTags:Clean(LP.CharacterAdded:Connect(function(char)
+					setup(char)
+				end))
+			else
+				cleanup()
+			end
+		end,
+		Tooltip = 'Customizes your nametag with rank icon and winstreak (koli bullshit)'
+	})
+	
+	local TitleSizeSlider = OGNameTags:CreateSlider({
+		Name = 'Title Text Size',
+		Min = 8,
+		Max = 30,
+		Default = 14,
+		Function = function(val)
+			TITLE_TEXT_SIZE = val
+			if LP.Character then
+				local original = findLocalOriginalNametag(LP.Character)
+				if original then
+					fixRoleTextScaling(original)
+				end
+			end
+		end
+	})
+end)
+
+run(function()
+	local TC
+	local list
+	local TABLE = {}
+	local old
+	TC = vape.Categories.Render:CreateModule({
+	Name = "TitleChanger",
+	Function = function(callback)
+		if callback then
+			if old then else old = lplr:GetAttribute("TitleType") end
+				local att = list.Value or ""
+				lplr:SetAttribute("TitleType",att)
+				task.wait(.85) 
+				if lplr:GetAttribute("TitleType") == old then
+					att = list.Value or ""
+					lplr:SetAttribute("TitleType",att)
+				end
+			else
+				lplr:SetAttribute("TitleType",old)
+				old = nil
+			end
+		end,
+		Tooltip ='Client Sided Titles :D'
+	})
+	for _, v in pairs(bedwars.TitleTypes) do
+		TABLE[#TABLE+1] = v
+	end
+	list = TC:CreateDropdown({
+		Name = "Titles",
+		List = TABLE,
+		Function = function()
+			if old then else old = lplr:GetAttribute("TitleType") end
+				lplr:SetAttribute("TitleType",list.Value)
+			end,
+		})
 end)
