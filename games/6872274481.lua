@@ -13640,160 +13640,47 @@ end)
 	
 run(function()
 	local AutoTool
-	local oldHitBlock
-	local cachedTools = {}
-	local cachedSlots = {}
-	local lastBlock = nil
-	local currentTargetBlock = nil
-	local updateConnection
+	local old, event
 	
-	local function rebuildToolCache()
-		table.clear(cachedTools)
-		table.clear(cachedSlots)
-		
-		if not store.inventory or not store.inventory.hotbar then return end
-		
-		for i, v in ipairs(store.inventory.hotbar) do
-			if v.item then
-				local itemType = v.item.itemType
-				cachedSlots[itemType] = i - 1
-			end
-		end
-	end
+	local function hotbarSwitchItem(block)
+		if block and not block:GetAttribute('NoBreak') and not block:GetAttribute('Team'..(lplr:GetAttribute('Team') or 0)..'NoBreak') then
+			local tool, slot = store.tools[bedwars.ItemMeta[block.Name].block.breakType], nil
+			if tool then
+				for i, v in store.inventory.hotbar do
+					if v.item and v.item.itemType == tool.itemType then slot = i - 1 break end
+				end
 	
-	local function isHoldingTool()
-		local hand = store.hand
-		if not hand or not hand.tool then return false end
-		
-		local tool = hand.tool
-		if not tool then return false end
-		
-		local itemMeta = bedwars.ItemMeta[tool.Name]
-		if not itemMeta then return false end
-		
-		return itemMeta.breakBlock ~= nil or itemMeta.sword == nil and itemMeta.projectileSource == nil and itemMeta.block == nil
-	end
-	
-	local function getBestToolForBlock(block)
-		if not block then return nil, nil end
-		if block:GetAttribute('NoBreak') then return nil, nil end
-		if block:GetAttribute('Team'..(lplr:GetAttribute('Team') or 0)..'NoBreak') then return nil, nil end
-	
-		local blockMeta = bedwars.ItemMeta[block.Name]
-		if not blockMeta or not blockMeta.block or not blockMeta.block.breakType then 
-			return nil, nil 
-		end
-		
-		local breakType = blockMeta.block.breakType
-		
-		if cachedTools[breakType] then
-			return cachedTools[breakType], cachedSlots[cachedTools[breakType]]
-		end
-		
-		local tool = store.tools[breakType]
-		if not tool then return nil, nil end
-		
-		local slot = cachedSlots[tool.itemType]
-		if slot then
-			cachedTools[breakType] = tool.itemType
-			return tool.itemType, slot
-		end
-		
-		return nil, nil
-	end
-	
-	local function updateTargetBlock()
-		if not entitylib.isAlive then 
-			currentTargetBlock = nil
-			return 
-		end
-		
-		if not isHoldingTool() then
-			currentTargetBlock = nil
-			return
-		end
-		
-		pcall(function()
-			local blockSelector = bedwars.BlockBreaker.clientManager:getBlockSelector()
-			if blockSelector then
-				local mouseInfo = blockSelector:getMouseInfo(1)
-				if mouseInfo and mouseInfo.target and mouseInfo.target.blockInstance then
-					local block = mouseInfo.target.blockInstance
-					
-					if block ~= currentTargetBlock then
-						currentTargetBlock = block
-						
-						local toolType, slot = getBestToolForBlock(block)
-						
-						if toolType and slot then
-							hotbarSwitch(slot)
-						end
+				if hotbarSwitch(slot) then
+					if inputService:IsMouseButtonPressed(0) then 
+						event:Fire() 
 					end
-				else
-					currentTargetBlock = nil
+					return true
 				end
 			end
-		end)
+		end
 	end
-	
+
 	AutoTool = vape.Categories.World:CreateModule({
 		Name = 'AutoTool',
 		Function = function(callback)
 			if callback then
-				rebuildToolCache()
-				lastBlock = nil
-				currentTargetBlock = nil
-				
-				updateConnection = runService.RenderStepped:Connect(function()
-					updateTargetBlock()
-				end)
-				
-				AutoTool:Clean(store.inventoryUpdate.Event:Connect(function()
-					rebuildToolCache()
+				event = Instance.new('BindableEvent')
+				AutoTool:Clean(event)
+				AutoTool:Clean(event.Event:Connect(function()
+					contextActionService:CallFunction('block-break', Enum.UserInputState.Begin, newproxy(true))
 				end))
-				
-				oldHitBlock = bedwars.BlockBreaker.hitBlock
+				old = bedwars.BlockBreaker.hitBlock
 				bedwars.BlockBreaker.hitBlock = function(self, maid, raycastparams, ...)
-					if isHoldingTool() then
-						pcall(function()
-							local blockSelector = self.clientManager:getBlockSelector()
-							if blockSelector then
-								local block = blockSelector:getMouseInfo(1, {ray = raycastparams})
-								if block and block.target and block.target.blockInstance then
-									local targetBlock = block.target.blockInstance
-									local toolType, slot = getBestToolForBlock(targetBlock)
-									
-									if toolType and slot then
-										hotbarSwitch(slot)
-									end
-								end
-							end
-						end)
-					end
-					
-					return oldHitBlock(self, maid, raycastparams, ...)
+					local block = self.clientManager:getBlockSelector():getMouseInfo(1, {ray = raycastparams})
+					if hotbarSwitchItem(block and block.target and block.target.blockInstance or nil) then return end
+					return old(self, maid, raycastparams, ...)
 				end
-				
-				AutoTool:Clean(updateConnection)
-				
 			else
-				if updateConnection then
-					updateConnection:Disconnect()
-					updateConnection = nil
-				end
-				
-				if oldHitBlock then
-					bedwars.BlockBreaker.hitBlock = oldHitBlock
-					oldHitBlock = nil
-				end
-				
-				table.clear(cachedTools)
-				table.clear(cachedSlots)
-				lastBlock = nil
-				currentTargetBlock = nil
+				bedwars.BlockBreaker.hitBlock = old
+				old = nil
 			end
 		end,
-		Tooltip = 'Automatically selects the correct tool before breaking blocks'
+		Tooltip = 'Automatically selects the correct tool'
 	})
 end)
 	
