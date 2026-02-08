@@ -33631,7 +33631,7 @@ run(function()
 	local Players = game:GetService("Players")
 	local RunService = game:GetService("RunService")
 	local LocalPlayer = Players.LocalPlayer
-	local WHITELISTED_USERS = {"aero", "kolifyz", "soryed"}
+	local WHITELISTED_USERS = {"aero", "kolifyz", "soryed", "hubains"}
 	local validatedUsername = shared.ValidatedUsername or ""
 	
 	local function isWhitelisted()
