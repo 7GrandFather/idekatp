@@ -20450,7 +20450,7 @@ run(function()
 									oldTexture[texture] = texture.Texture
 									oldColor[texture] = texture.Color3
 									texture.Texture = "rbxassetid://16991768606"
-									texture.Color3 = Color3.fromRGB(20, 255, 74)
+									texture.Color3 = Color3.fromRGB(15, 185, 55)
 								end
 							end
 						end
@@ -20478,7 +20478,7 @@ run(function()
 									oldTexture[texture] = texture.Texture
 									oldColor[texture] = texture.Color3
 									texture.Texture = "rbxassetid://16991768606"
-									texture.Color3 = Color3.fromRGB(20, 255, 74)
+									texture.Color3 = Color3.fromRGB(15, 185, 55)
 								end
 							end
 						end
@@ -20495,7 +20495,7 @@ run(function()
 						OldMaterials[obj] = obj.MaterialVariant
 						OldColors[obj] = obj.Color
 						obj.MaterialVariant = 'rbxassetid://16991768606_green'
-						obj.Color = Color3.fromRGB(20, 255, 74)
+						obj.Color = Color3.fromRGB(15, 185, 55)
 					end
 				end))
 				
@@ -20509,7 +20509,7 @@ run(function()
 						OldMaterials[obj] = obj.MaterialVariant
 						OldColors[obj] = obj.Color
 						obj.MaterialVariant = 'rbxassetid://16991768606_green'
-						obj.Color = Color3.fromRGB(20, 255, 74)
+						obj.Color = Color3.fromRGB(15, 185, 55)
 					end
 				end))
 				
@@ -20523,7 +20523,7 @@ run(function()
 						OldMaterials[obj] = obj.MaterialVariant
 						OldColors[obj] = obj.Color
 						obj.MaterialVariant = 'rbxassetid://16991768606_green'
-						obj.Color = Color3.fromRGB(20, 255, 74)
+						obj.Color = Color3.fromRGB(15, 185, 55)
 					end
 				end
 				
@@ -20545,11 +20545,11 @@ run(function()
 									elseif v.BackgroundColor3 == Color3.fromRGB(255, 102, 204) or 
 										   v.BackgroundColor3 == Color3.fromRGB(255, 85, 255) or 
 										   v.BackgroundColor3 == Color3.fromRGB(218, 133, 222) then
-										v.BackgroundColor3 = Color3.fromRGB(20, 255, 74)
+										v.BackgroundColor3 = Color3.fromRGB(15, 185, 55)
 										if v.Parent then
 											for _, sibling in v.Parent:GetChildren() do
 												if sibling:IsA("UIStroke") then
-													sibling.Color = Color3.fromRGB(20, 255, 74)
+													sibling.Color = Color3.fromRGB(15, 185, 55)
 												end
 											end
 										end
@@ -20581,11 +20581,11 @@ run(function()
 								elseif v.BackgroundColor3 == Color3.fromRGB(255, 102, 204) or 
 									   v.BackgroundColor3 == Color3.fromRGB(255, 85, 255) or 
 									   v.BackgroundColor3 == Color3.fromRGB(218, 133, 222) then
-									v.BackgroundColor3 = Color3.fromRGB(20, 255, 74)
+									v.BackgroundColor3 = Color3.fromRGB(15, 185, 55)
 									if v.Parent then
 										for _, sibling in v.Parent:GetChildren() do
 											if sibling:IsA("UIStroke") then
-												sibling.Color = Color3.fromRGB(20, 255, 74)
+												sibling.Color = Color3.fromRGB(15, 185, 55)
 											end
 										end
 									end
@@ -20610,7 +20610,7 @@ run(function()
 									end
 								end
 							end
-						elseif v.BackgroundColor3 == Color3.fromRGB(20, 255, 74) then
+						elseif v.BackgroundColor3 == Color3.fromRGB(15, 185, 55) then
 							v.BackgroundColor3 = Color3.fromRGB(255, 102, 204)
 							if v.Parent then
 								for _, sibling in v.Parent:GetChildren() do
@@ -20651,7 +20651,133 @@ run(function()
 				table.clear(oldColor)
 			end
 		end,
-		Tooltip = 'OG team colors: Orange->Red, Pink->Light Green + Remove NumTeamMembers'
+		Tooltip = 'OG team colors: Orange->Red, Pink->Dark Green + Remove NumTeamMembers'
+	})
+end)
+
+run(function()
+	local NoNameTag
+	local originalNametags = {}
+	local nametagConnection = nil
+	local playerConnections = {}
+	
+	local function removeNametag(character)
+		if not NoNameTag or not NoNameTag.Enabled then return end
+		if not character then return end
+		
+		local head = character:FindFirstChild("Head")
+		if not head then return end
+		
+		pcall(function()
+			local nametag = head:FindFirstChild('Nametag')
+			if nametag then
+				if not originalNametags[character] then
+					originalNametags[character] = nametag:Clone()
+				end
+				nametag:Destroy()
+			end
+		end)
+	end
+	
+	local function restoreNametag(character)
+		if not character then return end
+		
+		local head = character:FindFirstChild("Head")
+		if not head then return end
+		
+		pcall(function()
+			local existing = head:FindFirstChild('Nametag')
+			if existing then
+				existing:Destroy()
+			end
+			
+			if originalNametags[character] then
+				local restoredTag = originalNametags[character]:Clone()
+				restoredTag.Parent = head
+				restoredTag.Visible = true
+				originalNametags[character] = nil
+			end
+		end)
+	end
+	
+	NoNameTag = vape.Categories.Utility:CreateModule({
+		Name = 'NoNameTag',
+		Tooltip = 'Removes nametags for all players',
+		Function = function(callback)
+			if callback then
+				nametagConnection = runService.RenderStepped:Connect(function()
+					pcall(function()
+						for _, player in playersService:GetPlayers() do
+							if player.Character then
+								removeNametag(player.Character)
+							end
+						end
+						
+						for _, entity in collectionService:GetTagged("entity") do
+							if entity:IsA("Model") then
+								removeNametag(entity)
+							end
+						end
+					end)
+				end)
+				
+				for _, player in playersService:GetPlayers() do
+					if player.Character then
+						removeNametag(player.Character)
+					end
+					
+					local charConn = player.CharacterAdded:Connect(function(character)
+						task.wait(0.5)
+						if NoNameTag.Enabled then
+							removeNametag(character)
+						end
+					end)
+					table.insert(playerConnections, charConn)
+				end
+				
+				local playerAddedConn = playersService.PlayerAdded:Connect(function(player)
+					if player.Character then
+						removeNametag(player.Character)
+					end
+					
+					local charConn = player.CharacterAdded:Connect(function(character)
+						task.wait(0.5)
+						if NoNameTag.Enabled then
+							removeNametag(character)
+						end
+					end)
+					table.insert(playerConnections, charConn)
+				end)
+				table.insert(playerConnections, playerAddedConn)
+				
+			else
+				if nametagConnection then
+					nametagConnection:Disconnect()
+					nametagConnection = nil
+				end
+				
+				for _, conn in pairs(playerConnections) do
+					if conn then
+						conn:Disconnect()
+					end
+				end
+				table.clear(playerConnections)
+				
+				for _, player in playersService:GetPlayers() do
+					if player.Character then
+						restoreNametag(player.Character)
+					end
+				end
+				
+				for _, entity in collectionService:GetTagged("entity") do
+					if entity:IsA("Model") then
+						restoreNametag(entity)
+					end
+				end
+				
+				table.clear(originalNametags)
+			end
+		end,
 	})
 end)
 
@@ -35387,10 +35513,24 @@ run(function()
 		Name = 'LayeredClothing',
 		Function = function(callback)
 			if callback then
+				for _, item in pairs(addedItems) do
+					if item and item.Parent then
+						item:Destroy()
+					end
+				end
+				addedItems = {}
+				
 				LayeredClothing:Clean(entitylib.Events.LocalAdded:Connect(characterAdded))
 				if entitylib.isAlive then
 					characterAdded(entitylib.character)
 				end
+				
+				LayeredClothing:Clean(lplr.CharacterAdded:Connect(function()
+					task.wait(0.1) 
+					if entitylib.isAlive then
+						characterAdded(entitylib.character)
+					end
+				end))
 			else
 				for _, item in pairs(addedItems) do
 					if item and item.Parent then
