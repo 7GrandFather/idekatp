@@ -1,7 +1,6 @@
 local EXPECTED_REPO_OWNER = "poopparty"
 local EXPECTED_REPO_NAME = "poopparty"
 local ACCOUNT_SYSTEM_URL = "https://raw.githubusercontent.com/poopparty/whitelistcheck/main/AccountSystem.lua"
-local LOOTLABS_LINK = "https://work.ink/1YyH/aerov4-free-key-system"
 local KEY_PAGE_URL = "https://wrealaero.github.io/vape-keys/"
 local KEY_SECRET = "AERO_SECRET_2025"
 
