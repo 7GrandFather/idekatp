@@ -1,4 +1,5 @@
 --This watermark is used to delete the file if its cached, remove it to make the file persist after vape updates.
+--This watermark is used to delete the file if its cached, remove it to make the file persist after vape updates.
 local mainapi = {
 	Categories = {},
 	GUIColor = {
@@ -4707,9 +4708,12 @@ function mainapi:CreateCategoryList(categorysettings)
 					end
 				end)
 				object.MouseButton1Click:Connect(function()
-					mainapi:Save(v.Name)
-					mainapi:Load(true)
-				end)
+						if mainapi.ThreadFix then
+							setthreadidentity(8)
+						end
+						mainapi:Save(v.Name)
+						mainapi:Load(true)
+					end)
 				object.MouseEnter:Connect(function()
 					bind.Visible = true
 					if v.Name ~= mainapi.Profile then
@@ -5653,6 +5657,9 @@ function mainapi:Load(skipgui, profile)
 		self.Downloader:Destroy()
 		self.Downloader = nil
 	end
+	if mainapi.ThreadFix then
+		setthreadidentity(8)
+	end
 	self.Loaded = savecheck
 	self.Categories.Main.Options.Bind:SetBind(self.Keybind)
 
@@ -5693,6 +5700,9 @@ function mainapi:Load(skipgui, profile)
 end
 
 function mainapi:LoadOptions(object, savedoptions)
+	if mainapi.ThreadFix then
+		setthreadidentity(8)
+	end
 	for i, v in savedoptions do
 		local option = object.Options[i]
 		if not option then continue end
