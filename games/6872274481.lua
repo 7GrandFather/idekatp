@@ -2400,8 +2400,8 @@ run(function()
             Name = 'Block CPS',
             Min = 1,
             Max = 20,
-            DefaultMin = 12,
-            DefaultMax = 12,
+            DefaultMin = 14.4,
+            DefaultMax = 14.4,
             Darker = true
         })
         
